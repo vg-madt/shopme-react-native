@@ -32,6 +32,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "URL": "http://localhost:5000"        
     }
   }
 }

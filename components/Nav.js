@@ -8,7 +8,9 @@ import Login from '../screens/Login';
 import Register from '../screens/Register';
 import Settings from '../screens/Settings';
 import Orders from '../screens/Orders';
+import Admin from '../screens/Admin'
 import Icon from 'react-native-vector-icons/FontAwesome';
+
 
 
 const Stack = createStackNavigator();
@@ -20,7 +22,9 @@ function StackNav({navigation}) {
         <Stack.Screen name='Login' component={Login} />
         <Stack.Screen name='Register' component={Register} />
         <Stack.Screen name='Cart' component={Cart} />
+        <Stack.Screen name='Admin' component={Admin} />
         <Stack.Screen name='Orders' component={Orders} />
+
       </Stack.Navigator>
   );
 }

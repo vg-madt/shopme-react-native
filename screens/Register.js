@@ -1,33 +1,28 @@
 import React,{useState} from 'react';
 import { FlatList, StyleSheet, Text, SafeAreaView,View,Button,Image,ToastAndroid} from 'react-native';
 import { TextInput, TouchableOpacity,TouchableHighlight } from 'react-native-gesture-handler';
+import Constants from "expo-constants";
 
 export default function Register({navigation}) {
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
+  const [username, setName] = useState('');
   const [password,setPassword] = useState('');
-
-  var custo;
-  const showToast = () => {
-    ToastAndroid.show("Registered", ToastAndroid.SHORT);
-  };
 
   function register(){
 
     try{
-      var r = fetch('http://localhost:5000/register.action', {
+      var r = fetch( Constants.manifest.extra.URL+'/user/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json',
                   'Accept':'application/json' },
         body: JSON.stringify({
-          name:name,
+          username:username,
           email:email,
           password:password
         })
         
       });
       console.log('result ',r);
-      //showToast();
       navigation.navigate('Login');
 
     } catch(e){
@@ -44,9 +39,9 @@ export default function Register({navigation}) {
      
      <TextInput style={styles.textInput}
         placeholder='Name'
-        value={name}
+        value={username}
         
-        onChangeText={(name) => setName(name)}/>
+        onChangeText={(username) => setName(username)}/>
         <TextInput style={styles.textInput}
         value={email}
         placeholder='Email'

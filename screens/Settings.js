@@ -1,7 +1,7 @@
 import React,{useState,useEffect} from 'react';
 import { FlatList, StyleSheet, Text, Touchable, TouchableOpacity, View } from 'react-native';
 import SyncStorage from 'sync-storage';
-//import StackNav from '../components/StackNav';
+
 
 export default function Settings({navigation}) {
     var user = SyncStorage.get('currentUser');
@@ -49,6 +49,9 @@ export default function Settings({navigation}) {
         //navigation.navigate('Home');
         
     }
+    function toAdmin(){
+        navigation.navigate('Admin');
+    }
     function toViewOrder(){
         navigation.navigate('Orders');
     }
@@ -72,12 +75,23 @@ export default function Settings({navigation}) {
     <View style={styles.line}></View>
     <TouchableOpacity onPress={toViewOrder}>
         <Text style={styles.text}>View Orders</Text>
-    </TouchableOpacity></View>}
-    <View style={styles.line}></View>
+    </TouchableOpacity>
+    <View style={styles.line}></View></View>
+    }
+    
+    {user === "admin" ?<View>
+        <TouchableOpacity onPress={toAdmin}>
+            <Text style={styles.text}>Admin Page</Text>
+        </TouchableOpacity>
+        <View style={styles.line}></View>
+        </View>:
+        <View></View>}
+   
         <TouchableOpacity onPress={toCart}>
             <Text style={styles.text}>View Cart</Text>
         </TouchableOpacity>
         <View style={styles.line}></View>
+        
     </View>
   );
 }

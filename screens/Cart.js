@@ -3,20 +3,16 @@ import {Button,FlatList, StyleSheet, Text, View,SafeAreaView,TouchableOpacity,Im
 import SyncStorage from 'sync-storage';
 import { useIsFocused } from "@react-navigation/native";
 import { ScrollView, TextInput } from 'react-native-gesture-handler';
-//import Toast from 'react-native-simple-toast';
+import Constants from "expo-constants";
+
 
 export default function Cart({navigation}) {
   var currentUser = SyncStorage.get('currentUser');
   var isLoggedIn = SyncStorage.get('isLoggedIn');
   const [user,setUser]=useState('');
   
-  var cart = [];
-  const[products,setProducts]=useState([]);
-  const[productIds,setProductIds]=useState([]);
+  var [cart,setCart] = useState({});
   const isFocused = useIsFocused();
-  var [totalCost,setT] = useState(0);
-  var [hst,setH] = useState(0);
-  var [subTotal,setS] = useState(0);
   const [change,setChange] = useState(true);
   const [count, setCount] = useState(0);
   
@@ -31,8 +27,6 @@ export default function Cart({navigation}) {
   useEffect(() => {
     console.log("called");
     getCart();
-    
-    //getProducts();
 },[change]);
 
 useEffect(() => {
@@ -49,66 +43,44 @@ useEffect(() => {
 }
   getCart();
   
-  //getProducts();
 },[isFocused]);
 
 
-
-useEffect(() => {
-  const interval = setInterval(() => {
-    //currentUser = SyncStorage.get('currentUser');
-    //console.log('currnt user ',currentUser);
-    setCount((count) => count + 1);
-  }, 10);
-
-  const unsubscribe = navigation.addListener('focus', () => {
-    setCount(0);
-  });
-
-  return () => {
-    clearTimeout(interval);
-    unsubscribe;
-  };
-}, [clearCart]);
-
 const handleOrder = async () => {
   try{
-    var r = await fetch('http://localhost:5000/addOrder.action&' + currentUser, {
+    var r = await fetch(Constants.manifest.extra.URL+'/order/' + currentUser, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json',
                 'Accept':'application/json' },
       body: JSON.stringify({
-        customerEmail:customerEmail,
-        customerName:customerName,
-        phoneNumber:phoneNumber,
+        email:customerEmail,
+        name:customerName,
+        phonenumber:phoneNumber,
         address:address,
-        postalCode:postalCode,
-        details:products,
-        hst:hst,
-        totalCost:totalCost,
-        subTotal:subTotal,
+        postalcode:postalCode,
+        products:cart.products,
+        hst:cart.hst,
+        totalcost:cart.totalcost,
+        subtotal:cart.subtotal,
         date: new Date(),
         status:'Ordered'
       })
       
     });
-    var c = await fetch('http://localhost:5000/removeCart.action', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json',
-                'Accept':'application/json' },
-      body: JSON.stringify({
-        id:user
-      })
-      
-    });
-    navigation.navigate('Home');
+
+    if(change==true){
+      setChange(false);
+   }else{
+     setChange(true);
+   }
+
   } catch(e){
     console.log('post req error ',e);
     console.log(customerName,customerEmail,address);
   }
 }
 
-const clearCart = () => {
+const clearCart = async () => {
   if(currentUser === '' || currentUser === undefined){
     currentUser = 'Guest';
     setUser('Guest');
@@ -120,16 +92,19 @@ const clearCart = () => {
     isLoggedIn=true;
 }
   try{
-    var c = fetch('http://localhost:5000/removeCart.action', {
+    var c = await fetch(Constants.manifest.extra.URL+'/cart/'+currentUser, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json',
                 'Accept':'application/json' },
       body: JSON.stringify({
-        id:currentUser
+        products:[],
+        totalcost:0.0,
+        hst:0.0,
+        subtotal:0.0
       })
       
     });
-    if(change){
+    if(change==true){
       setChange(false);
    }else{
      setChange(true);
@@ -144,37 +119,12 @@ const getCart = async () => {
   try {
     console.log("getcart is called");
     let response = await fetch(
-      'http://localhost:5000/getCart.action&'+currentUser
+      Constants.manifest.extra.URL+'/cart/'+currentUser
     );
     let data = await response.json();
   var obj = Object.values(data);
-  cart = data;
-  setProducts(data.products);
-  console.log("products ",products);
-
-  if (cart === undefined) {
-    console.log("cart is undefined")
-    //cart = {};
-    //products = [];
-    setProducts([]);
-    setT(0);
-    setS(0);
-    setH(0);
-}else if(cart.products.length==0){
-  console.log("cart products is empty");
-  setProducts([]);
-  setT(0);
-  setS(0);
-  setH(0);
-
-}else if(cart.products.length>0){
-  console.log("cart has items ",cart);
-  setProducts(cart.products)
-    setT(cart.totalCost);
-    setS(cart.subTotal);
-    setH(cart.hst);
-}
-    return obj;
+  setCart(data);
+  console.log("cart in cart page ",cart.subtotal)
   } catch (error) {
      console.error(error);
   }
@@ -190,24 +140,25 @@ const getCart = async () => {
        <View> 
        <FlatList 
       style={styles.flatlist}
-      keyExtractor={(item,index) => index.toString()}
-      data = {products}
+      keyExtractor={(item,index) => item._id}
+      data = {cart.products}
       //extraData={isChanged}
       renderItem = {itemData =>
         <View style={styles.cart}>
 
-          <Image style={styles.image} source={{uri:'http://localhost:5000/getImage.action-'+itemData.item.id}}/>          
+          <Image style={styles.image} source={{uri:Constants.manifest.extra.URL+'/product/pimage/'+itemData.item._id}}/>          
         
         <Text style={styles.text}> {itemData.item.name}</Text>
           <Text style={styles.price}>CA${itemData.item.price}</Text>
+          <Text style={styles.price}>x{itemData.item.count}</Text>
         </View>}/>
      </View>
     
-     {subTotal > 0 ? 
+     {cart.subtotal > 0 ? 
      <View>
-     <Text style={styles.total}> Sub Total: CA$ {subTotal.toFixed(2)}</Text>
-     <Text style={styles.total}> HST 13%: CA$ {hst.toFixed(2)}</Text>
-     <Text style={styles.total}> Total: CA$  {totalCost.toFixed(2)}</Text>
+     <Text style={styles.total}> Sub Total: CA$ {cart.subtotal.toFixed(2)}</Text>
+     <Text style={styles.total}> HST 13%: CA$ {cart.hst.toFixed(2)}</Text>
+     <Text style={styles.total}> Total: CA$  {cart.totalcost.toFixed(2)}</Text>
      <TouchableOpacity
         onPress={clearCart}>
           <Text style={styles.clr}>Clear Cart</Text>
@@ -261,7 +212,7 @@ const styles = StyleSheet.create({
     container:{
         flex:1,
         paddingStart:5,
-        paddingTop:10,
+        paddingTop:40,
         backgroundColor:'white'
 
     },
@@ -279,7 +230,8 @@ const styles = StyleSheet.create({
     },
     image:{
       height:40,
-      width:40
+      width:40,
+      marginLeft:-10
     },
     cart:{
       flex:1,
@@ -297,11 +249,10 @@ const styles = StyleSheet.create({
     price:{
       fontSize:14,
       fontWeight:'bold',
-      paddingLeft:30,
+      paddingLeft:10,
       paddingRight:10,
       flex:1,
       textAlign:'right',
-      //alignSelf:'stretch'
     },
     total:{
       marginTop:20,
@@ -358,5 +309,8 @@ const styles = StyleSheet.create({
       paddingEnd:20,
       fontWeight:'500',
       color:'blue'
+    },
+    text:{
+      marginLeft:0
     }
 });

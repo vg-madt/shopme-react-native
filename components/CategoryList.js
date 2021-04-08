@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React,{useState,useEffect} from 'react';
+import React from 'react';
 import { FlatList, StyleSheet, Text, View,SafeAreaView, TouchableOpacity } from 'react-native';
 
 export default function CategoryList(props) {
@@ -14,7 +14,7 @@ export default function CategoryList(props) {
       <FlatList 
       style={styles.flatlist}
       horizontal
-      keyExtractor={(item,index) => item.id.toString()}
+      keyExtractor={(item,index) => item._id}
       data = {categories}
       renderItem = {itemData =>
         
@@ -37,7 +37,8 @@ const styles = StyleSheet.create({
   },
   text:{
       borderRadius:40,
-      paddingVertical:30,
+      paddingVertical:32,
+      paddingHorizontal:2,
       height:80,
       width:80,
       marginLeft:10,

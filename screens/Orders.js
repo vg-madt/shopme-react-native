@@ -3,44 +3,77 @@ import { FlatList, StyleSheet, Text, View,SafeAreaView,TouchableOpacity,Image, A
 import SyncStorage from 'sync-storage';
 import { useIsFocused } from "@react-navigation/native";
 import { ScrollView, TextInput } from 'react-native-gesture-handler';
-//import Toast from 'react-native-simple-toast';
+import Constants from "expo-constants";
 
-export default function Cart({navigation}) {
+export default function Order({navigation}) {
   var currentUser = SyncStorage.get('currentUser');
   var cart = [];
   const[orders,setOrders]=useState([]);
   const[products,setProducts]=useState([]);
   const isFocused = useIsFocused();
-  var [totalCost,setT] = useState(0);
-  var [hst,setH] = useState(0);
-  var [subTotal,setS] = useState(0);
+  const [chosenOrder, setChosenOrder] = useState({})
+  var colors = ['#fffcb0','#ccfff8','#d5ffcc','#ffe9cc','#ffbcb0']
+  var index = 0
 
   useEffect(() => {
     console.log("called");
     getOrder();
-    //getProducts();
 },[isFocused]);
 
-
+function bgcolor(item){
+  switch(item){
+    case "Ordered":
+      return colors[0]
+    case "Shipped":
+      return colors[1]
+      break;
+      case "Completed":
+        case "Delivered":
+        return colors[2]
+        break;
+        case "Payment Pending":
+          return colors[3]
+          break;
+          case "Cancelled":
+            return colors[4]
+      break;
+  }
+}
 const getOrder = async () => {
   try {
-    console.log("getcart is called");
+    //console.log("getorder is called");
     let response = await fetch(
-      'http://localhost:5000/getOrders!'+currentUser
+      Constants.manifest.extra.URL+'/order/'+currentUser
     );
     let data = await response.json();
-  var obj = Object.values(data);
-  cart = obj;
+  //cart = obj;
   setOrders(data);
-  var cartValues = Object.values(cart);
-  var v = Object.values(cartValues);
-  //setProducts(cart.details);
-  //console.log("cart Values ",products);
-    return obj;
+
   } catch (error) {
      console.error(error);
   }
 };
+
+const cancelOrder = async(item) => {
+ item.status = "Cancelled"
+ setChosenOrder(item)
+  try{
+    let response = await fetch(
+      Constants.manifest.extra.URL+'/order/'+item._id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json',
+                  'Accept':'application/json' },
+        body: JSON.stringify({
+          status:"Cancelled"
+        })
+        
+      });
+    let data = await response.json();
+    console.log("changed order ",data)
+  }catch(e){
+    console.error(e);
+  }
+}
 
   return (
     <View style={styles.container}>
@@ -49,31 +82,39 @@ const getOrder = async () => {
         
        <FlatList 
       style={styles.flatlist}
-      keyExtractor={(item,index) => item.id.toString()}
+      keyExtractor={(item,index) => item._id}
       data = {orders}
       //extraData={isChanged}
       renderItem = {itemData =>
         <View style={styles.cart}>
-            <View style={styles.head}>
-            <Text style={{fontWeight:'bold'}}>Order Id: {itemData.item.id}        </Text>
-            <Text style={styles.text}>Total Cost: {parseFloat(itemData.item.totalCost).toFixed(2)}</Text>
-            <Text style={styles.text}>Status: {itemData.item.status}</Text>
+            <Text style={{fontWeight:'bold'}}>Order Id: {itemData.item._id}</Text>
+            <View style={styles.head}>    
+            <Text>Total Cost: ${parseFloat(itemData.item.totalcost).toFixed(2)}</Text>
+            </View>
+           
+        <View style={styles.head}>
+            <Text>Name: {itemData.item.name}        </Text>
         </View>
         <View style={styles.head}>
-            <Text>Customer Name: {itemData.item.customerName}        </Text>
+            <Text>Email: {itemData.item.email}        </Text>
         </View>
         <View style={styles.head}>
-            <Text>Customer Email: {itemData.item.customerEmail}        </Text>
+            <Text>Phone: {itemData.item.phonenumber}        </Text>
         </View>
         <View style={styles.head}>
-            <Text>Phone: {itemData.item.phoneNumber}        </Text>
-        </View>
-        <View style={styles.head}>
-        <Text>Total Products: {itemData.item.details.length}</Text>
+        <Text>Total Products: {itemData.item.products.length}</Text>
          </View>
          <View style={styles.head}>
         <Text>Date ordered: {itemData.item.date.split('T')[0]}</Text>
          </View>
+         {<View style={{backgroundColor: bgcolor(itemData.item.status),borderRadius:30,height:40,padding:10,marginTop:10}}>
+            <Text style={{textAlign:'center'}}>Status: {itemData.item.status}</Text>
+            </View>}
+           {itemData.item.status==="Ordered" || itemData.item.status ==="Payment Pending" ? <View style={styles.button}>
+             <TouchableOpacity
+             onPress={() => cancelOrder(itemData.item)}>
+            <Text style={{textAlign:'center',color:'white'}}>Cancel</Text>
+            </TouchableOpacity></View>:<View></View>} 
         </View>}/>
     </View>
     
@@ -103,12 +144,12 @@ const styles = StyleSheet.create({
     },
     head:{
       flexDirection:'row',
-      paddingTop:10
+      paddingTop:10,
     },
     cart:{
-      height:200,
+      height:250,
       width:390,
-      backgroundColor:'#dBEFF2',
+      backgroundColor:'#ededed',
       padding:10,
       marginTop:10,
       borderRadius:10
@@ -120,6 +161,14 @@ const styles = StyleSheet.create({
     },
     p:{
         marginTop:5
+    },
+    button:{
+      height:40,width:100,justifyContent:'center',alignContent:'center',
+      backgroundColor:'#ff5757',
+      borderRadius:35,
+      marginTop:-100,
+      marginLeft:260,
+      padding:10
     }
 
 });

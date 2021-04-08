@@ -1,8 +1,8 @@
 import React,{useState} from 'react';
 import { FlatList, StyleSheet, Text, SafeAreaView,View,Button,Image} from 'react-native';
 import { TextInput, TouchableOpacity,TouchableHighlight } from 'react-native-gesture-handler';
-import syncStorage from 'sync-storage';
 import SyncStorage from 'sync-storage';
+import Constants from "expo-constants";
 
 export default function Login({navigation}) {
   const [email, setEmail] = useState('');
@@ -12,7 +12,7 @@ export default function Login({navigation}) {
   const login = async () => {
     try{
 
-      var r = await fetch('http://localhost:5000/login.action', {
+      var r = await fetch(Constants.manifest.extra.URL+'/user/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json',
                   'Accept':'application/json' },
@@ -26,7 +26,7 @@ export default function Login({navigation}) {
       console.log('value ',data)
           SyncStorage.set('currentUser', data.email);
           SyncStorage.set('isLoggedIn',true);
-          //console.log('cuser', SyncStorage.get('currentUser'));
+          console.log('cuser', SyncStorage.get('currentUser'));
           navigation.navigate('Settings');
     } catch(e){
       console.log('post req error ',e);
